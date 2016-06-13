@@ -1,8 +1,9 @@
 package com.tm;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.model.Response;
+import com.util.FtpFile;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 @Controller
 public class TaskController {
@@ -29,25 +32,41 @@ public class TaskController {
         return "Task manager responding to ping at " + System.currentTimeMillis();
     }
     
-    @RequestMapping(value = "tm/writetoexcel", method = RequestMethod.POST)
+    @RequestMapping(value = "tm/uploadexcel", method = RequestMethod.POST)
     public @ResponseBody String respondToWriteToExcel(HttpServletRequest request, HttpServletResponse response) throws Throwable
     {
-        Logger.getLogger("tm").info("writetoexcel");
+        boolean isUploaded = false;
+        Logger.getLogger("tm").info("uploadexcel");
         
-        Response responseObj = new Response(HttpServletResponse.SC_OK, Response.RESPONSE_MSG_SUCCESS);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String exceldata = request.getParameter("exceldata");
+        String fileConfig = request.getParameter("fileconfig");
         
-        if(exceldata != null)
+        if(fileConfig != null)
         {
-            JSONArray excelJsonArray = new JSONArray();
+            JSONObject fileConfigJson = new JSONObject(fileConfig);
             
             XSSFWorkbook workbook = new XSSFWorkbook();
-            FileOutputStream out = new FileOutputStream(new File("employee.xlsx"));
+            String fileName = fileConfigJson.getString("filename");
+            File LocalFile = new File(fileName);
+            FileOutputStream out = new FileOutputStream(LocalFile);
             workbook.write(out);
             out.close();
+            
+            String serverName = fileConfigJson.getString("servername");
+            String userName = fileConfigJson.getString("username");
+            String password = fileConfigJson.getString("password");
+            FtpFile ftpFileObj = new FtpFile(serverName, userName, password);
+            ftpFileObj.connect();
+            
+            String remoteFileName = fileConfigJson.getString("remotefilename");
+            InputStream inStreamObj = new FileInputStream(LocalFile);
+            isUploaded = ftpFileObj.upload(remoteFileName, inStreamObj);
+            
         }
+        
+        Response responseObj = new Response(HttpServletResponse.SC_OK, (isUploaded ? Response.RESPONSE_MSG_SUCCESS : Response.RESPONSE_MSG_FAILURE));
+        ObjectMapper objectMapper = new ObjectMapper();
         String ResponseString = objectMapper.writeValueAsString(responseObj);
+        
         return ResponseString;
     }
 }
