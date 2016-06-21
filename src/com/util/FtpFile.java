@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.log4j.Logger;
 
@@ -26,7 +27,8 @@ public class FtpFile {
         this.ftpClient.connect(this.serverName);
         boolean isLoggedIn = this.ftpClient.login(this.userName, this.password);
         this.ftpClient.enterLocalPassiveMode();
-
+        this.ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+        
         if(isLoggedIn)
         {
             Logger.getLogger("tm").info("FTP Logged in successfully");
