@@ -11,6 +11,8 @@ import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.rubyeye.xmemcached.MemcachedClient;
+
 import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.model.Response;
 import com.util.FtpFile;
+import com.util.MemCache;
 import com.util.Utilities;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -40,7 +43,7 @@ public class TaskController {
     }
     
     @RequestMapping(value = "tm/uploadexcel", method = RequestMethod.POST)
-    public @ResponseBody String respondToWriteToExcel(HttpServletRequest request, HttpServletResponse response) throws Throwable
+    public @ResponseBody String respondToWriteToExcel(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         boolean isUploaded = false;
         Logger.getLogger("tm").info("uploadexcel");
@@ -126,6 +129,73 @@ public class TaskController {
         }
         
         Response responseObj = new Response(HttpServletResponse.SC_OK, (isUploaded ? Response.RESPONSE_MSG_SUCCESS : Response.RESPONSE_MSG_FAILURE));
+        ObjectMapper objectMapper = new ObjectMapper();
+        String ResponseString = objectMapper.writeValueAsString(responseObj);
+        
+        return ResponseString;
+    }
+    
+    @RequestMapping(value = "tm/putintomemcache", method = RequestMethod.GET)
+    public @ResponseBody String respondToPutInToMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        Logger.getLogger("tm").info("putintomemcache");
+        boolean putInMemCache = false;
+        String servers = request.getParameter("servers");
+        MemcachedClient client = MemCache.getMemcachedClient(servers);
+        
+        if(client != null)
+        {
+            MemCache memCacheObj = new MemCache(client);
+            String key = request.getParameter("key");
+            int index = Integer.parseInt(request.getParameter("index"));
+            String value = request.getParameter("value");
+            
+            memCacheObj.set(key, index, value);
+            putInMemCache = true;
+        }
+        
+        Response responseObj = new Response(HttpServletResponse.SC_OK, (putInMemCache ? Response.RESPONSE_MSG_SUCCESS : Response.RESPONSE_MSG_FAILURE));
+        ObjectMapper objectMapper = new ObjectMapper();
+        String ResponseString = objectMapper.writeValueAsString(responseObj);
+        
+        return ResponseString;
+    }
+    
+    @RequestMapping(value = "tm/getfrommemcache", method = RequestMethod.GET)
+    public @ResponseBody String respondToGetFromMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        Logger.getLogger("tm").info("getfrommemcache");
+        
+        String toRet = null;
+        String servers = request.getParameter("servers");
+        MemcachedClient client = MemCache.getMemcachedClient(servers);
+        
+        if(client != null)
+        {
+            MemCache memCacheObj = new MemCache(client);
+            String key = request.getParameter("key");
+            
+            toRet = memCacheObj.get(key);
+        }
+        
+        return toRet;
+    }
+    
+    @RequestMapping(value = "tm/shutdownmemcache", method = RequestMethod.GET)
+    public @ResponseBody String respondToShutDownMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        /*Logger.getLogger("tm").info("availableProcessors = " + Runtime.getRuntime().availableProcessors());*/
+        Logger.getLogger("tm").info("shut down memcache client");
+        boolean shutdownMemCache = false;
+        String servers = request.getParameter("servers");
+        MemcachedClient client = MemCache.getMemcachedClient(servers);
+        if(client != null)
+        {
+            MemCache memCacheObj = new MemCache(client);
+            shutdownMemCache = memCacheObj.shutdown();
+        }
+        
+        Response responseObj = new Response(HttpServletResponse.SC_OK, (shutdownMemCache ? Response.RESPONSE_MSG_SUCCESS : Response.RESPONSE_MSG_FAILURE));
         ObjectMapper objectMapper = new ObjectMapper();
         String ResponseString = objectMapper.writeValueAsString(responseObj);
         
