@@ -13,6 +13,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.rubyeye.xmemcached.MemcachedClient;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -184,7 +189,6 @@ public class TaskController {
     @RequestMapping(value = "tm/shutdownmemcache", method = RequestMethod.GET)
     public @ResponseBody String respondToShutDownMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        /*Logger.getLogger("tm").info("availableProcessors = " + Runtime.getRuntime().availableProcessors());*/
         Logger.getLogger("tm").info("shut down memcache client");
         boolean shutdownMemCache = false;
         String servers = request.getParameter("servers");
@@ -196,6 +200,23 @@ public class TaskController {
         }
         
         Response responseObj = new Response(HttpServletResponse.SC_OK, (shutdownMemCache ? Response.RESPONSE_MSG_SUCCESS : Response.RESPONSE_MSG_FAILURE));
+        ObjectMapper objectMapper = new ObjectMapper();
+        String ResponseString = objectMapper.writeValueAsString(responseObj);
+        
+        return ResponseString;
+    }
+    
+    @RequestMapping(value = "tm/makehttprequest", method = RequestMethod.GET)
+    public @ResponseBody String respondToMakeHttpRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        Logger.getLogger("tm").info("make http request");
+        
+        String url = request.getParameter("url");
+        HttpGet httpRequest = new HttpGet(url);
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpResponse httpResponse = client.execute(httpRequest);
+        
+        Response responseObj = new Response(HttpServletResponse.SC_OK, EntityUtils.toString(httpResponse.getEntity()));
         ObjectMapper objectMapper = new ObjectMapper();
         String ResponseString = objectMapper.writeValueAsString(responseObj);
         
