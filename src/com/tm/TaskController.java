@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.model.Response;
 import com.util.FtpFile;
+import com.util.HttpManager;
 import com.util.MemCache;
 import com.util.Utilities;
 
@@ -212,11 +213,9 @@ public class TaskController {
         Logger.getLogger("tm").info("make http request");
         
         String url = request.getParameter("url");
-        HttpGet httpRequest = new HttpGet(url);
-        HttpClient client = HttpClientBuilder.create().build();
-        HttpResponse httpResponse = client.execute(httpRequest);
+        HttpManager httpManager = new HttpManager(url, null);
         
-        Response responseObj = new Response(HttpServletResponse.SC_OK, EntityUtils.toString(httpResponse.getEntity()));
+        Response responseObj = new Response(HttpServletResponse.SC_OK, httpManager.makeRequest());
         ObjectMapper objectMapper = new ObjectMapper();
         String ResponseString = objectMapper.writeValueAsString(responseObj);
         
