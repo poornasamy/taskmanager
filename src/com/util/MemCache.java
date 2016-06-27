@@ -1,12 +1,8 @@
 package com.util;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.MemcachedClientBuilder;
 import net.rubyeye.xmemcached.XMemcachedClientBuilder;
-import net.rubyeye.xmemcached.exception.MemcachedException;
 import net.rubyeye.xmemcached.utils.AddrUtil;
 
 public class MemCache {
@@ -16,21 +12,21 @@ public class MemCache {
         this.client = client;
     }
     
-    public static MemcachedClient getMemcachedClient(String servers) throws IOException { 
+    public static MemcachedClient getMemcachedClient(String servers) throws Exception { 
          MemcachedClientBuilder builder = new XMemcachedClientBuilder(AddrUtil.getAddresses(servers)); 
          return builder.build(); 
      }
     
     public void set(String paramString, int paramInt,
-            Object paramObject) throws TimeoutException, InterruptedException, MemcachedException {
+            Object paramObject) throws Exception {
         this.client.set(paramString, paramInt, paramObject);
     }
     
-    public String get(String paramString) throws TimeoutException, InterruptedException, MemcachedException {
+    public String get(String paramString) throws Exception {
         return this.client.get(paramString);
     }
     
-    public boolean shutdown() throws IOException {
+    public boolean shutdown() throws Exception {
         if(this.client != null)
         {
             this.client.shutdown();
