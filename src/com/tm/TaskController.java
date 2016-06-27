@@ -13,11 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.rubyeye.xmemcached.MemcachedClient;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -28,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.model.Employee;
 import com.model.Response;
 import com.util.FtpFile;
 import com.util.HttpManager;
@@ -41,10 +37,11 @@ import org.json.JSONObject;
 @Controller
 public class TaskController {
 
+    Logger logger = Logger.getLogger(this.getClass());
     @RequestMapping(value = "tm/ping", method = RequestMethod.GET)
     public @ResponseBody String respondToPing()
     {
-        Logger.getLogger("tm").info("ping");
+        logger.info("ping");
         return "Task manager responding to ping at " + System.currentTimeMillis();
     }
     
@@ -52,7 +49,7 @@ public class TaskController {
     public @ResponseBody String respondToWriteToExcel(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         boolean isUploaded = false;
-        Logger.getLogger("tm").info("uploadexcel");
+        logger.info("uploadexcel");
         
         String fileConfig = request.getParameter("fileconfig");
         
@@ -63,7 +60,7 @@ public class TaskController {
             String dataURL = fileConfigJson.getString("dataurl");
             InputStream dataURLInputStreamObj = new URL(dataURL).openStream();
             String dataURLString = Utilities.getStringFromInputStream(dataURLInputStreamObj);
-            Logger.getLogger("tm").info("dataURLString = " + dataURLString);
+            logger.info("dataURLString = " + dataURLString);
             
             JSONArray dataURLJsonArray = new JSONArray(dataURLString);
             
@@ -144,7 +141,7 @@ public class TaskController {
     @RequestMapping(value = "tm/putintomemcache", method = RequestMethod.GET)
     public @ResponseBody String respondToPutInToMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        Logger.getLogger("tm").info("putintomemcache");
+        logger.info("putintomemcache");
         boolean putInMemCache = false;
         String servers = request.getParameter("servers");
         MemcachedClient client = MemCache.getMemcachedClient(servers);
@@ -170,7 +167,7 @@ public class TaskController {
     @RequestMapping(value = "tm/getfrommemcache", method = RequestMethod.GET)
     public @ResponseBody String respondToGetFromMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        Logger.getLogger("tm").info("getfrommemcache");
+        logger.info("getfrommemcache");
         
         String toRet = null;
         String servers = request.getParameter("servers");
@@ -190,7 +187,7 @@ public class TaskController {
     @RequestMapping(value = "tm/shutdownmemcache", method = RequestMethod.GET)
     public @ResponseBody String respondToShutDownMemcache(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        Logger.getLogger("tm").info("shut down memcache client");
+        logger.info("shut down memcache client");
         boolean shutdownMemCache = false;
         String servers = request.getParameter("servers");
         MemcachedClient client = MemCache.getMemcachedClient(servers);
@@ -210,13 +207,35 @@ public class TaskController {
     @RequestMapping(value = "tm/makehttprequest", method = RequestMethod.GET)
     public @ResponseBody String respondToMakeHttpRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        Logger.getLogger("tm").info("make http request");
+        logger.info("make http request");
         
         String url = request.getParameter("url");
         HttpManager httpManager = new HttpManager(url, null);
         
         Response responseObj = new Response(HttpServletResponse.SC_OK, httpManager.makeRequest());
         ObjectMapper objectMapper = new ObjectMapper();
+        String ResponseString = objectMapper.writeValueAsString(responseObj);
+        
+        return ResponseString;
+    }
+    
+    @RequestMapping(value = "tm/readvalue", method = RequestMethod.GET)
+    public @ResponseBody String respondToReadValue(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        logger.info("read value");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String dataURL = request.getParameter("dataurl");
+        URL urlObj = new URL(dataURL);
+        Employee[] employeeObj = objectMapper.readValue(urlObj, Employee[].class);
+        
+        for(int i = 0; i < employeeObj.length; i++)
+        {
+            logger.info("emp id = " + employeeObj[i].getId());
+            logger.info("emp name = " + employeeObj[i].getName());
+        }
+        
+        Response responseObj = new Response(HttpServletResponse.SC_OK, Response.RESPONSE_MSG_SUCCESS);
+        
         String ResponseString = objectMapper.writeValueAsString(responseObj);
         
         return ResponseString;
