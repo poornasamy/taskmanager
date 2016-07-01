@@ -21,6 +21,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.model.Employee;
@@ -220,12 +221,13 @@ public class TaskController {
     }
     
     @RequestMapping(value = "tm/readvalue", method = RequestMethod.GET)
-    public @ResponseBody String respondToReadValue(HttpServletRequest request, HttpServletResponse response) throws Exception
+    public @ResponseBody String respondToReadValue(HttpServletRequest request,
+                                                   HttpServletResponse response,
+                                                   @RequestParam(required = true) String dataurl) throws Exception
     {
         logger.info("read value");
         ObjectMapper objectMapper = new ObjectMapper();
-        String dataURL = request.getParameter("dataurl");
-        URL urlObj = new URL(dataURL);
+        URL urlObj = new URL(dataurl);
         Employee[] employeeObj = objectMapper.readValue(urlObj, Employee[].class);
         
         for(int i = 0; i < employeeObj.length; i++)
